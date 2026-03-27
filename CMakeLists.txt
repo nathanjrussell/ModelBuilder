@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
 project(ModelBuilder
-  VERSION 0.1.0
+  VERSION 0.2.0
   DESCRIPTION "Modular components to build a model on categorical data"
   LANGUAGES CXX
 )
@@ -38,7 +38,7 @@ FetchContent_Declare(LeftTree
 
 FetchContent_Declare(ContingencyTable
   GIT_REPOSITORY https://github.com/nathanjrussell/ContingencyTable
-  GIT_TAG v2.0.0
+  GIT_TAG v2.1.0
 )
 
 FetchContent_Declare(CPPTypeConcepts
