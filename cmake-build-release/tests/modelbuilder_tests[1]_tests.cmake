@@ -1,0 +1,3 @@
+add_test([=[ModelBuilder.BuildTree_Smoke]=]  /Volumes/DockDrive/research/model_builder/ModelBuilder/cmake-build-release/tests/modelbuilder_tests [==[--gtest_filter=ModelBuilder.BuildTree_Smoke]==] --gtest_also_run_disabled_tests)
+set_tests_properties([=[ModelBuilder.BuildTree_Smoke]=]  PROPERTIES DEF_SOURCE_LINE /Volumes/DockDrive/research/model_builder/ModelBuilder/tests/test_modelbuilder.cpp:6 WORKING_DIRECTORY /Volumes/DockDrive/research/model_builder/ModelBuilder/cmake-build-release/tests SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
+set(  modelbuilder_tests_TESTS ModelBuilder.BuildTree_Smoke)

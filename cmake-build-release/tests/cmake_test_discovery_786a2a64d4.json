@@ -1,0 +1,17 @@
+{
+  "tests": 1,
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "ModelBuilder",
+      "tests": 1,
+      "testsuite": [
+        {
+          "name": "BuildTree_Smoke",
+          "file": "\/Volumes\/DockDrive\/research\/model_builder\/ModelBuilder\/tests\/test_modelbuilder.cpp",
+          "line": 6
+        }
+      ]
+    }
+  ]
+}
