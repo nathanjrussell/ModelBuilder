@@ -20,6 +20,11 @@ target_link_libraries(modelbuilder_tests
     GTest::gtest_main
 )
 
+target_compile_definitions(modelbuilder_tests
+  PRIVATE
+    MODELBUILDER_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/.."
+)
+
 include(GoogleTest)
 gtest_discover_tests(modelbuilder_tests)
 
