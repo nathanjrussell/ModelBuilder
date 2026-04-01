@@ -39,7 +39,7 @@ FetchContent_Declare(LeftTree
 
 FetchContent_Declare(ContingencyTable
   GIT_REPOSITORY https://github.com/nathanjrussell/ContingencyTable
-  GIT_TAG v4.2.0
+  GIT_TAG v4.3.0
 )
 
 FetchContent_Declare(CPPTypeConcepts

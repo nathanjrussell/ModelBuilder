@@ -155,7 +155,12 @@ TreeBuilder TreeBuilder::buildFromDataDir(const std::string& parsedDir,
   // Seed a root element.
   selector.findSignificantColumn();
   if (!selector.significantColumnFound() || !selector.significantPartitionFound()) {
-    tree.createLeaf(LeafData{0});
+    if (!selector.significantColumnFound()) {
+      tree.createLeaf(LeafData::noSignificantColumn(selector.getTargetCounts()));
+    } else {
+      tree.createLeaf(LeafData::noSignificantPartition(selector.getSignificantColumnIndex(),
+                                                       selector.getTargetCounts()));
+    }
   } else {
     const auto nodeIdForCounts = static_cast<std::uint32_t>(tree.currentNodeID() < 0 ? 0 : tree.currentNodeID());
     const auto splitColumnIndex = static_cast<std::uint64_t>(selector.getSignificantColumnIndex());
@@ -180,13 +185,24 @@ TreeBuilder TreeBuilder::buildFromDataDir(const std::string& parsedDir,
 
   while (!tree.complete()) {
     if (maxDepth != 0 && currentDepth() >= maxDepth) {
-      tree.createLeaf(LeafData{0});
+      // Depth-limited leaf; treat as "no significant column" for now.
+      // We still call findSignificantColumn() elsewhere to populate target counts; but at a
+      // depth-limit leaf we want the target distribution of the rows that reached the node.
+      // Rebuild enabled rows, run feature selection just to compute target counts.
+      rebuildEnabledRowsForCurrentPosition();
+      selector.findSignificantColumn();
+      tree.createLeaf(LeafData::noSignificantColumn(selector.getTargetCounts()));
     } else {
       rebuildEnabledRowsForCurrentPosition();
       selector.findSignificantColumn();
 
       if (!selector.significantColumnFound() || !selector.significantPartitionFound()) {
-        tree.createLeaf(LeafData{0});
+        if (!selector.significantColumnFound()) {
+          tree.createLeaf(LeafData::noSignificantColumn(selector.getTargetCounts()));
+        } else {
+          tree.createLeaf(LeafData::noSignificantPartition(selector.getSignificantColumnIndex(),
+                                                          selector.getTargetCounts()));
+        }
       } else {
         const auto nodeIdForCounts = static_cast<std::uint32_t>(tree.currentNodeID() < 0 ? 0 : tree.currentNodeID());
         const auto splitColumnIndex = static_cast<std::uint64_t>(selector.getSignificantColumnIndex());

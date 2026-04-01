@@ -231,7 +231,13 @@ ModelBuilder::Tree ModelBuilder::buildTree(std::size_t maxDepth) {
   // The root decision is based on feature selection on all currently enabled rows.
   impl_->selector.findSignificantColumn();
   if (!impl_->selector.significantColumnFound() || !impl_->selector.significantPartitionFound()) {
-    tree.createLeaf(LeafData{0});
+    if (!impl_->selector.significantColumnFound()) {
+      tree.createLeaf(LeafData::noSignificantColumn(impl_->selector.getTargetCounts()));
+    } else {
+      tree.createLeaf(
+          LeafData::noSignificantPartition(impl_->selector.getSignificantColumnIndex(),
+                                           impl_->selector.getTargetCounts()));
+    }
   } else {
     const auto nodeIdForCounts = static_cast<std::uint32_t>(tree.currentNodeID() < 0 ? 0 : tree.currentNodeID());
     const auto splitColumnIndex = static_cast<std::uint64_t>(impl_->selector.getSignificantColumnIndex());
@@ -266,7 +272,10 @@ ModelBuilder::Tree ModelBuilder::buildTree(std::size_t maxDepth) {
   while (!tree.complete()) {
     // Enforce max depth if requested.
     if (maxDepth != 0 && currentDepth() >= maxDepth) {
-      tree.createLeaf(LeafData{0});
+      // Depth-limited leaf; treat as "no significant column" for now.
+      rebuildEnabledRowsForCurrentPosition();
+      impl_->selector.findSignificantColumn();
+      tree.createLeaf(LeafData::noSignificantColumn(impl_->selector.getTargetCounts()));
       // Leaf insertion may backtrack; update stacks below.
     } else {
       rebuildEnabledRowsForCurrentPosition();
@@ -274,7 +283,12 @@ ModelBuilder::Tree ModelBuilder::buildTree(std::size_t maxDepth) {
       impl_->selector.findSignificantColumn();
 
       if (!impl_->selector.significantColumnFound() || !impl_->selector.significantPartitionFound()) {
-        tree.createLeaf(LeafData{0});
+        if (!impl_->selector.significantColumnFound()) {
+          tree.createLeaf(LeafData::noSignificantColumn(impl_->selector.getTargetCounts()));
+        } else {
+          tree.createLeaf(LeafData::noSignificantPartition(impl_->selector.getSignificantColumnIndex(),
+                                                          impl_->selector.getTargetCounts()));
+        }
       } else {
         const auto nodeIdForCounts = static_cast<std::uint32_t>(tree.currentNodeID() < 0 ? 0 : tree.currentNodeID());
         const auto splitColumnIndex = static_cast<std::uint64_t>(impl_->selector.getSignificantColumnIndex());
@@ -404,7 +418,15 @@ void ModelBuilder::createGraphviz(const Tree& tree, const std::string& outputDot
         (void)elemType;
         label << "\nLeaf";
         if (lf.has_value()) {
-          label << "\nvalue=" << lf->placeholder();
+          label << "\nsplitColumn=" << lf->splitColumnIndexOrMinusOne();
+          label << "\ntargetCounts:";
+          if (lf->targetCounts().empty()) {
+            label << "\n  (empty)";
+          } else {
+            for (const auto& [k, v] : lf->targetCounts()) {
+              label << "\n  " << k << ":" << v;
+            }
+          }
         } else {
           label << "\n(no data)";
         }

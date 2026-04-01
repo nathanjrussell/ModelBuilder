@@ -127,6 +127,27 @@ TEST(ModelBuilder, TreeSerialization_RoundTrip) {
   ASSERT_NE(tree2.root(), nullptr);
   EXPECT_EQ(tree2.elementCount(), tree.elementCount());
 
+  // Verify leaf payload parity (including targetCounts) across the whole tree.
+  for (std::size_t i = 0; i < tree.elementCount(); ++i) {
+    const auto d0i = tree.getElementData(i);
+    const auto d1i = tree2.getElementData(i);
+    ASSERT_TRUE(d0i.has_value());
+    ASSERT_TRUE(d1i.has_value());
+
+    if (std::holds_alternative<modelbuilder::ModelBuilder::Tree::LeafDataResult>(*d0i)) {
+      ASSERT_TRUE(std::holds_alternative<modelbuilder::ModelBuilder::Tree::LeafDataResult>(*d1i));
+      const auto& [t0l, l0] = std::get<modelbuilder::ModelBuilder::Tree::LeafDataResult>(*d0i);
+      const auto& [t1l, l1] = std::get<modelbuilder::ModelBuilder::Tree::LeafDataResult>(*d1i);
+      (void)t0l;
+      (void)t1l;
+      ASSERT_TRUE(l0.has_value());
+      ASSERT_TRUE(l1.has_value());
+      EXPECT_EQ(l0->reason(), l1->reason());
+      EXPECT_EQ(l0->splitColumnIndexOrMinusOne(), l1->splitColumnIndexOrMinusOne());
+      EXPECT_EQ(l0->targetCounts(), l1->targetCounts());
+    }
+  }
+
   // Spot-check root payload parity when both are nodes with payload.
   auto d0 = tree.getElementData(0);
   auto d1 = tree2.getElementData(0);
@@ -217,7 +238,9 @@ TEST(TreeBuilder, ArtifactSerialization_RoundTrip) {
     (void)t1;
     ASSERT_TRUE(l0.has_value());
     ASSERT_TRUE(l1.has_value());
-    EXPECT_EQ(l0->placeholder(), l1->placeholder());
+    EXPECT_EQ(l0->reason(), l1->reason());
+    EXPECT_EQ(l0->splitColumnIndexOrMinusOne(), l1->splitColumnIndexOrMinusOne());
+    EXPECT_EQ(l0->targetCounts(), l1->targetCounts());
   }
 }
 
