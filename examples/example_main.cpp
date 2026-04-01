@@ -44,8 +44,8 @@ int main(int argc, char** argv) {
     // Configure significance thresholds.
     // Column alpha controls whether a split column is considered significant.
     // Partition alpha controls whether an actual partition is accepted on that column.
-    mb.setColumnAlpha(0.005, /*applyBonferroni=*/true);
-    mb.setPartitionAlpha(0.005, /*applyBonferroni=*/false);
+    mb.setColumnAlpha(0.45, /*applyBonferroni=*/true);
+    mb.setPartitionAlpha(0.45, /*applyBonferroni=*/false);
 
     // ModelBuilder currently requires analysis/split candidate columns to be configured.
     // For a simple example, enable all columns except the target.
@@ -60,9 +60,9 @@ int main(int argc, char** argv) {
       mb.setAnalysisColumns(analysisColumns);
     }
 
-    auto tree = mb.buildTree(/*maxDepth=*/3);
+    auto tree = mb.buildTree(0);
     std::cout << "Built tree with " << tree.elementCount() << " elements\n";
-    // mb.createGraphviz(tree, "modelbuilder_tree.dot");
+    mb.createGraphviz(tree, "modelbuilder_tree.dot");
     std::cout << "Wrote modelbuilder_tree.dot (render with: dot -Tpng modelbuilder_tree.dot -o tree.png)\n";
   } catch (const std::exception& e) {
     std::cout << "ModelBuilder example failed: " << e.what() << "\n";

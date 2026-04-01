@@ -1,15 +1,20 @@
 {
-  "tests": 1,
+  "tests": 2,
   "name": "AllTests",
   "testsuites": [
     {
       "name": "ModelBuilder",
-      "tests": 1,
+      "tests": 2,
       "testsuite": [
         {
           "name": "BuildTree_Smoke",
           "file": "\/Volumes\/DockDrive\/research\/model_builder\/ModelBuilder\/tests\/test_modelbuilder.cpp",
-          "line": 6
+          "line": 31
+        },
+        {
+          "name": "PartitionCounts_ReconcileWithChildren",
+          "file": "\/Volumes\/DockDrive\/research\/model_builder\/ModelBuilder\/tests\/test_modelbuilder.cpp",
+          "line": 67
         }
       ]
     }

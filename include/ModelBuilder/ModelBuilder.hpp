@@ -17,6 +17,15 @@ public:
     std::size_t splitColumnIndex = 0;
     std::vector<std::uint32_t> leftPartitionValues;
     std::vector<std::uint32_t> rightPartitionValues;
+
+    // Number of currently-active rows whose split-column value falls into each partition.
+    // Partition "one" corresponds to leftPartitionValues; partition "two" corresponds to rightPartitionValues.
+    std::uint64_t leftPartitionCount = 0;
+    std::uint64_t rightPartitionCount = 0;
+
+    // Debug: number of currently-enabled rows at the moment this node was created.
+    // (Excludes any permanently-disabled header row.)
+    std::uint64_t enabledRowCountAtCreation = 0;
   };
 
   struct LeafData {
