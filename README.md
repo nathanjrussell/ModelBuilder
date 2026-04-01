@@ -60,5 +60,5 @@ This project exports a CMake target:
 
 It also fetches (via `FetchContent`) the following dependencies:
 - `LeftTree` (tag `v1.0.0`)
-- `ContingencyTable` (tag `v1.0.0`)
+ - `ContingencyTable` (tag `v4.2.0`)
 - `CPP-Type-Concepts` (tag `v1.0.0`, target `CPPTypeConcepts::cpp_type_concepts`)

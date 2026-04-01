@@ -19,6 +19,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(ModelBuilder
   src/ModelBuilder.cpp
+  src/TreeBuilder.cpp
 )
 add_library(ModelBuilder::ModelBuilder ALIAS ModelBuilder)
 

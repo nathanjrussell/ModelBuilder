@@ -130,15 +130,6 @@ ModelBuilder::Tree ModelBuilder::buildTree(std::size_t maxDepth) {
 
   Tree tree;
 
-  auto countEnabledRows = [&]() -> std::uint64_t {
-    std::uint64_t c = 0;
-    // DataTable uses row 0 as header; ignore it for diagnostics.
-    for (std::size_t i = 1; i < impl_->rowIndices.size(); ++i) {
-      if (impl_->rowIndices[i] == 0) ++c;
-    }
-    return c;
-  };
-
   auto countEnabledRowsAfterApplyingPartition = [&](std::uint32_t threshold,
                                                     std::size_t splitColumnIndex,
                                                     const std::vector<std::uint32_t>& allowedValues) -> std::uint64_t {
@@ -211,7 +202,7 @@ ModelBuilder::Tree ModelBuilder::buildTree(std::size_t maxDepth) {
       // IMPORTANT: By contract, FeatureSelector partition "one" corresponds to the left branch
       // (LeftTree edge label "L") and partition "two" corresponds to the right branch.
       // NodeData stores these as leftPartitionValues/rightPartitionValues.
-      const auto& allowed = tookLeft ? nd.leftPartitionValues : nd.rightPartitionValues;
+      const auto& allowed = tookLeft ? nd.leftPartitionValues() : nd.rightPartitionValues();
 
       // Use threshold == node id.
       // This means: before applying this node's whitelist, re-enable any rows that were previously
@@ -219,7 +210,7 @@ ModelBuilder::Tree ModelBuilder::buildTree(std::size_t maxDepth) {
       impl_->selector.enabledRows(impl_->rowIndices,
                                  static_cast<std::uint32_t>(n->id),
                                  allowed,
-                                 nd.splitColumnIndex);
+                                 static_cast<std::size_t>(nd.splitColumnIndex()));
     }
 
     // Finally, apply the *current node's* branch filter for the next insertion (left child first,
@@ -228,11 +219,11 @@ ModelBuilder::Tree ModelBuilder::buildTree(std::size_t maxDepth) {
     if (auto* insertionParent = tree.getCurrentNode(); insertionParent && insertionParent->data.has_value()) {
       const auto& nd = *insertionParent->data;
       const bool insertingLeft = (insertionParent->left == nullptr);
-      const auto& allowed = insertingLeft ? nd.leftPartitionValues : nd.rightPartitionValues;
+      const auto& allowed = insertingLeft ? nd.leftPartitionValues() : nd.rightPartitionValues();
       impl_->selector.enabledRows(impl_->rowIndices,
                                  static_cast<std::uint32_t>(insertionParent->id),
                                  allowed,
-                                 nd.splitColumnIndex);
+                                 static_cast<std::size_t>(nd.splitColumnIndex()));
     }
   };
 
@@ -243,27 +234,22 @@ ModelBuilder::Tree ModelBuilder::buildTree(std::size_t maxDepth) {
     tree.createLeaf(LeafData{0});
   } else {
     const auto nodeIdForCounts = static_cast<std::uint32_t>(tree.currentNodeID() < 0 ? 0 : tree.currentNodeID());
-    NodeData nd;
-    nd.splitColumnIndex = impl_->selector.getSignificantColumnIndex();
+    const auto splitColumnIndex = static_cast<std::uint64_t>(impl_->selector.getSignificantColumnIndex());
     // Partition "one" is left, partition "two" is right.
-    nd.leftPartitionValues = impl_->selector.getFirstPartition();
-    nd.rightPartitionValues = impl_->selector.getSecondPartition();
+    auto leftValues = impl_->selector.getFirstPartition();
+    auto rightValues = impl_->selector.getSecondPartition();
 
     // Counts are defined as the number of rows reaching each branch (child) of this node.
     // Compute using the current enabled set (rows reaching this node) and applying the node's
     // own partition whitelist to a temporary marker vector.
-    nd.enabledRowCountAtCreation = countEnabledRows();
     // When applying a hypothetical partition filter for counting purposes, we must not clear
     // any markers that represent the current node's arrival state. Since enabledRows() clears
     // markers >= threshold, use (nodeId + 1) here.
     const auto countThreshold = nodeIdForCounts + 1;
-    nd.leftPartitionCount = countEnabledRowsAfterApplyingPartition(countThreshold,
-                                                                   nd.splitColumnIndex,
-                                                                   nd.leftPartitionValues);
-    nd.rightPartitionCount = countEnabledRowsAfterApplyingPartition(countThreshold,
-                                                                    nd.splitColumnIndex,
-                                                                    nd.rightPartitionValues);
-    tree.createNode(std::move(nd));
+    const auto leftCount = countEnabledRowsAfterApplyingPartition(countThreshold, static_cast<std::size_t>(splitColumnIndex), leftValues);
+    const auto rightCount = countEnabledRowsAfterApplyingPartition(countThreshold, static_cast<std::size_t>(splitColumnIndex), rightValues);
+
+    tree.createNode(modelbuilder::NodeData{splitColumnIndex, std::move(leftValues), std::move(rightValues), leftCount, rightCount});
   }
 
   // Depth tracking aligned to insertion path. LeftTree stores its own path privately, so we track here.
@@ -291,20 +277,15 @@ ModelBuilder::Tree ModelBuilder::buildTree(std::size_t maxDepth) {
         tree.createLeaf(LeafData{0});
       } else {
         const auto nodeIdForCounts = static_cast<std::uint32_t>(tree.currentNodeID() < 0 ? 0 : tree.currentNodeID());
-        NodeData nd;
-        nd.splitColumnIndex = impl_->selector.getSignificantColumnIndex();
+        const auto splitColumnIndex = static_cast<std::uint64_t>(impl_->selector.getSignificantColumnIndex());
         // Partition "one" is left, partition "two" is right.
-        nd.leftPartitionValues = impl_->selector.getFirstPartition();
-        nd.rightPartitionValues = impl_->selector.getSecondPartition();
-        nd.enabledRowCountAtCreation = countEnabledRows();
+        auto leftValues = impl_->selector.getFirstPartition();
+        auto rightValues = impl_->selector.getSecondPartition();
         const auto countThreshold = nodeIdForCounts + 1;
-        nd.leftPartitionCount = countEnabledRowsAfterApplyingPartition(countThreshold,
-                                                                       nd.splitColumnIndex,
-                                                                       nd.leftPartitionValues);
-        nd.rightPartitionCount = countEnabledRowsAfterApplyingPartition(countThreshold,
-                                                                        nd.splitColumnIndex,
-                                                                        nd.rightPartitionValues);
-        tree.createNode(std::move(nd));
+        const auto leftCount = countEnabledRowsAfterApplyingPartition(countThreshold, static_cast<std::size_t>(splitColumnIndex), leftValues);
+        const auto rightCount = countEnabledRowsAfterApplyingPartition(countThreshold, static_cast<std::size_t>(splitColumnIndex), rightValues);
+
+        tree.createNode(modelbuilder::NodeData{splitColumnIndex, std::move(leftValues), std::move(rightValues), leftCount, rightCount});
       }
     }
 
@@ -409,12 +390,11 @@ void ModelBuilder::createGraphviz(const Tree& tree, const std::string& outputDot
         (void)elemType;
         label << "\nNode";
         if (nd.has_value()) {
-          label << "\nsplitColumn=" << nd->splitColumnIndex;
-          label << "\nenabledRows=" << nd->enabledRowCountAtCreation;
-          label << "\nleftCount=" << nd->leftPartitionCount;
-          label << "\nleft=" << vecToString(nd->leftPartitionValues);
-          label << "\nrightCount=" << nd->rightPartitionCount;
-          label << "\nright=" << vecToString(nd->rightPartitionValues);
+          label << "\nsplitColumn=" << nd->splitColumnIndex();
+          label << "\nleftCount=" << nd->leftPartitionCount();
+          label << "\nleft=" << vecToString(nd->leftPartitionValues());
+          label << "\nrightCount=" << nd->rightPartitionCount();
+          label << "\nright=" << vecToString(nd->rightPartitionValues());
         } else {
           label << "\n(no data)";
         }
@@ -424,7 +404,7 @@ void ModelBuilder::createGraphviz(const Tree& tree, const std::string& outputDot
         (void)elemType;
         label << "\nLeaf";
         if (lf.has_value()) {
-          label << "\nvalue=" << lf->placeholder;
+          label << "\nvalue=" << lf->placeholder();
         } else {
           label << "\n(no data)";
         }

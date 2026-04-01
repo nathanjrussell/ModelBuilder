@@ -1,4 +1,5 @@
 #include <ModelBuilder/ModelBuilder.hpp>
+#include <ModelBuilder/TreeBuilder.hpp>
 
 #include <DataTable/DataTable.h>
 
@@ -6,6 +7,8 @@
 #include <iostream>
 
 int main(int argc, char** argv) {
+  // ModelBuilder remains available as an interactive builder / utilities host.
+  // TreeBuilder is the serializable single-tree artifact.
   modelbuilder::ModelBuilder mb;
 
   // Input CSV (categorical data expected).
@@ -36,31 +39,39 @@ int main(int argc, char** argv) {
       std::cout << "First column header: " << dt.getColumnHeader(0) << "\n";
     }
 
-    // Now build a model from the parsed directory.
-    mb.loadDataDir(parsedDir.string());
+    // Configure build parameters.
     // Column 0 is an identifier (record_id) and must be excluded from both target and split candidates.
-    mb.setTargetColumn(1);
+    const std::size_t targetColumn = 1;
+    const std::size_t maxDepth = 0; // 0 => unlimited
 
-    // Configure significance thresholds.
-    // Column alpha controls whether a split column is considered significant.
-    // Partition alpha controls whether an actual partition is accepted on that column.
-    mb.setColumnAlpha(0.45, /*applyBonferroni=*/true);
-    mb.setPartitionAlpha(0.45, /*applyBonferroni=*/false);
+    // Significance thresholds.
+    const double columnAlpha = 0.05;
+    const bool columnAlphaBonferroni = true;
+    const double partitionAlpha = 0.05;
+    const bool partitionAlphaBonferroni = false;
 
-    // ModelBuilder currently requires analysis/split candidate columns to be configured.
-    // For a simple example, enable all columns except the target.
+    // Optional: restrict split candidate columns for building/training.
+    // These analysis columns are NOT stored in the resulting TreeBuilder artifact serialization.
+    // For a simple example, enable all columns except id and target.
     std::vector<std::size_t> analysisColumns;
-    analysisColumns.reserve(static_cast<std::size_t>(mb.columnCount()));
-    for (std::size_t c = 0; c < static_cast<std::size_t>(mb.columnCount()); ++c) {
+    analysisColumns.reserve(static_cast<std::size_t>(dt.getColumnCount()));
+    for (std::size_t c = 0; c < static_cast<std::size_t>(dt.getColumnCount()); ++c) {
       if (c == 0) continue; // exclude id column
-      if (c == 1) continue; // exclude target column
+      if (c == targetColumn) continue; // exclude target column
       analysisColumns.push_back(c);
     }
-    if (!analysisColumns.empty()) {
-      mb.setAnalysisColumns(analysisColumns);
-    }
 
-    auto tree = mb.buildTree(0);
+    // Build the serializable artifact.
+    auto artifact = modelbuilder::TreeBuilder::buildFromDataDir(parsedDir.string(),
+                                                                targetColumn,
+                                                                maxDepth,
+                                                                columnAlpha,
+                                                                columnAlphaBonferroni,
+                                                                partitionAlpha,
+                                                                partitionAlphaBonferroni,
+                                                                analysisColumns);
+
+    const auto& tree = artifact.tree();
     std::cout << "Built tree with " << tree.elementCount() << " elements\n";
     mb.createGraphviz(tree, "modelbuilder_tree.dot");
     std::cout << "Wrote modelbuilder_tree.dot (render with: dot -Tpng modelbuilder_tree.dot -o tree.png)\n";
