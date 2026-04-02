@@ -8,6 +8,8 @@
 #include <string_view>
 #include <vector>
 
+#include "ModelBuilder/ModelBuilder.hpp"
+
 int main(int argc, char** argv) {
   // This example mirrors ModelBuilder_example.cpp, except it does NOT build the model.
   // It assumes the model was already built previously into modelOutDir and simply opens it.
@@ -53,7 +55,8 @@ int main(int argc, char** argv) {
 
     std::cout << "Fetched tree for targetColumn=" << wantTarget
               << " with elements=" << treeArtifact.tree().elementCount() << "\n";
-
+    modelbuilder::ModelBuilder builder;
+    builder.createGraphviz(treeArtifact.tree(), "col_1_tree.dot");
     // Example prediction: create a sample vector sized to the dataset column count.
     // Here we mark everything missing (0) and request conditional prediction.
     std::vector<std::uint64_t> sample(cols, 0);

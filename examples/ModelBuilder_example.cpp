@@ -43,9 +43,9 @@ int main(int argc, char** argv) {
 
     // Parameters.
     const std::size_t maxDepth = 0; // unlimited
-    const double columnAlpha = 0.005;
+    const double columnAlpha = 0.05;
     const bool columnAlphaBonferroni = true;
-    const double partitionAlpha = 0.005;
+    const double partitionAlpha = 0.05;
     const bool partitionAlphaBonferroni = false;
 
     // analysisColumns: all columns except column 0 (id).
