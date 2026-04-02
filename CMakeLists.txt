@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
 project(ModelBuilder
-  VERSION 0.4.0
+  VERSION 0.5.0
   DESCRIPTION "Modular components to build a model on categorical data"
   LANGUAGES CXX
 )
