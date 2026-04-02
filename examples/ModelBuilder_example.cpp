@@ -5,7 +5,6 @@
 #include <filesystem>
 #include <iostream>
 #include <map>
-#include <sstream>
 #include <string_view>
 #include <vector>
 
@@ -13,7 +12,7 @@ int main(int argc, char** argv) {
   // This example demonstrates the multi-tree artifact:
   //  - build many target-column trees in parallel
   //  - write mb_trees.bin + mb_map.bin
-  //  - serialize/deserialize the MultiModelBuilder object itself
+  //  - reopen the model from disk (no in-memory stream)
   //  - getTree(targetColumn) to lazily fetch one TreeBuilder
 
   const std::filesystem::path csvPath = std::filesystem::path{"examples"} / "sample_data" / "ptsd.csv";
@@ -78,15 +77,10 @@ int main(int argc, char** argv) {
     std::cout << "  - mb_trees.bin\n";
     std::cout << "  - mb_map.bin\n";
 
-    // Serialize/deserialize the MultiModelBuilder object itself (metadata + cached map).
-    std::stringstream ss(std::ios::in | std::ios::out | std::ios::binary);
-    // multi.serialize(ss);
-    ss.seekg(0);
-    auto multi2 = modelbuilder::MultiModelBuilder::deserialize(ss);
+    // Reopen the model from disk (this is the disk-backed deserialization path).
+    auto multi2 = modelbuilder::MultiModelBuilder::open(modelOutDir.string());
 
-    // Ensure lazy map is available even if we "forgot" it.
-    // (deserialize() already loads an embedded copy, but loadMap() will rebuild from disk.)
-    multi2.loadMap();
+    std::cout << "Reopened " << multi2.treeCount() << " trees from: " << modelOutDir << "\n";
 
     // Fetch one TreeBuilder for a specific target.
     const std::uint64_t wantTarget = 1;
@@ -111,5 +105,4 @@ int main(int argc, char** argv) {
 
   return 0;
 }
-
 

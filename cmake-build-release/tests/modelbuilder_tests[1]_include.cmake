@@ -1,5 +1,5 @@
-if(EXISTS "/Volumes/DockDrive/research/model_builder/ModelBuilder/cmake-build-release/tests/modelbuilder_tests[1]_tests.cmake")
-  include("/Volumes/DockDrive/research/model_builder/ModelBuilder/cmake-build-release/tests/modelbuilder_tests[1]_tests.cmake")
+if(EXISTS "/Volumes/DockDrive/github/research/ModelBuilder/cmake-build-release/tests/modelbuilder_tests[1]_tests.cmake")
+  include("/Volumes/DockDrive/github/research/ModelBuilder/cmake-build-release/tests/modelbuilder_tests[1]_tests.cmake")
 else()
   add_test(modelbuilder_tests_NOT_BUILT modelbuilder_tests_NOT_BUILT)
 endif()
