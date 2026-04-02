@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     std::cout << "  - mb_map.bin\n";
 
     // Fetch one TreeBuilder for a specific target.
-    const std::uint64_t wantTarget = 1;
+    const std::uint64_t wantTarget = dt.getColumnIndex("PTSDDx");
     auto treeArtifact = multi.getTree(wantTarget);
 
     std::cout << "Fetched tree for targetColumn=" << wantTarget
