@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
 
     // Serialize/deserialize the MultiModelBuilder object itself (metadata + cached map).
     std::stringstream ss(std::ios::in | std::ios::out | std::ios::binary);
-    multi.serialize(ss);
+    // multi.serialize(ss);
     ss.seekg(0);
     auto multi2 = modelbuilder::MultiModelBuilder::deserialize(ss);
 

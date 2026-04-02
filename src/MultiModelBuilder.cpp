@@ -394,6 +394,7 @@ static Dist predictFromIdOrThrow(const modelbuilder::TreeBuilder::Tree& tree,
 
 } // namespace
 
+
 std::map<std::uint32_t, double> MultiModelBuilder::predict(const std::vector<std::uint64_t>& sample,
                                                           std::uint64_t targetColumn,
                                                           bool applyConditional) const {
@@ -467,6 +468,12 @@ MultiModelBuilder MultiModelBuilder::deserialize(std::istream& in) {
   return mb;
 }
 
-} // namespace modelbuilder
+MultiModelBuilder MultiModelBuilder::open(const std::string& outputDir) {
+  MultiModelBuilder mb;
+  mb.outputDir_ = outputDir;
+  mb.loadMap();
+  return mb;
+}
 
+} // namespace modelbuilder
 

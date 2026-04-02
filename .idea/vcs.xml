@@ -3,16 +3,16 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build-release/_deps/contingencytable-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build-release/_deps/cpptypeconcepts-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build-release/_deps/datatable-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build-release/_deps/hashlibrary-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build-release/_deps/lefttree-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build-release/_deps/progressbar-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/contingencytable-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/datatable-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/hashlibrary-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/lefttree-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/progressbar-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/contingencytable-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/cpptypeconcepts-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/datatable-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/hashlibrary-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/lefttree-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/progressbar-src" vcs="Git" />
   </component>
 </project>

@@ -45,6 +45,12 @@ public:
                                          const std::vector<std::size_t>& analysisColumns,
                                          std::size_t threadCount);
 
+  // Open an already-built model from a directory containing mb_trees.bin and mb_map.bin.
+  //
+  // This does NOT rebuild any trees; it only loads the target->offset lookup from disk.
+  // After calling this, getTree() and predict() work.
+  static MultiModelBuilder open(const std::string& outputDir);
+
   [[nodiscard]] const std::string& parsedDir() const noexcept { return parsedDir_; }
   [[nodiscard]] const std::string& outputDir() const noexcept { return outputDir_; }
 
@@ -77,6 +83,9 @@ public:
   [[nodiscard]] std::map<std::uint32_t, double> predict(const std::vector<std::uint64_t>& sample,
                                                        std::uint64_t targetColumn,
                                                        bool applyConditional) const;
+
+
+
 
   void serialize(std::ostream& out) const;
   static MultiModelBuilder deserialize(std::istream& in);
@@ -117,5 +126,4 @@ private:
 static_assert(cpp_type_concepts::Serializable<MultiModelBuilder>);
 
 } // namespace modelbuilder
-
 

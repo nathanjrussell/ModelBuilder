@@ -25,3 +25,11 @@ target_link_libraries(ModelBuilder_example_fast
     ModelBuilder::ModelBuilder
 )
 
+add_executable(ModelBuilder_example_build_serialized_model
+  ModelBuilder_example_build_serialized_model.cpp
+)
+
+target_link_libraries(ModelBuilder_example_build_serialized_model
+  PRIVATE
+    ModelBuilder::ModelBuilder
+)
