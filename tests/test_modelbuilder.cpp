@@ -1,4 +1,5 @@
 #include <ModelBuilder/ModelBuilder.hpp>
+#include <ModelBuilder/MultiModelBuilder.hpp>
 #include <ModelBuilder/TreeBuilder.hpp>
 #include <DataTable/DataTable.h>
 #include <gtest/gtest.h>
@@ -6,13 +7,29 @@
 #include <LeftTree/LeftTreeSerialization.hpp>
 
 #include <filesystem>
+#include <map>
 #include <unordered_set>
+
+namespace {
+std::filesystem::path ensureParsedPtsdDataset() {
+  const std::filesystem::path outDir =
+      std::filesystem::path{MODELBUILDER_SOURCE_DIR} / "build" / "datasets" / "ptsd_output";
+
+  const auto metaDir = outDir / "meta_data";
+  const auto mappedDir = outDir / "mapped_data";
+  if (!std::filesystem::exists(metaDir) || !std::filesystem::exists(mappedDir)) {
+    throw std::runtime_error(std::string{"Missing parsed PTSD dataset at: "} + outDir.string() +
+                             " (run the examples with --reparse to generate it)");
+  }
+
+  return outDir;
+}
+} // namespace
 
 TEST(ModelBuilder, BuildTree_Smoke) {
   modelbuilder::ModelBuilder mb;
 
-  const std::filesystem::path dataDir = std::filesystem::path{MODELBUILDER_SOURCE_DIR} / "build" / "_deps" /
-                                        "contingencytable-src" / "examples" / "datasets" / "titanic_output";
+  const std::filesystem::path dataDir = ensureParsedPtsdDataset();
 
   mb.loadDataDir(dataDir.string());
   ASSERT_GT(mb.rowCount(), 0u);
@@ -54,8 +71,7 @@ TEST(ModelBuilder, BuildTree_ChildTotalsMatchParentBranchCount) {
   modelbuilder::ModelBuilder mb;
 
   // Use deterministic built-in dataset from the dependency.
-  const std::filesystem::path dataDir = std::filesystem::path{MODELBUILDER_SOURCE_DIR} / "build" / "_deps" /
-                                        "contingencytable-src" / "examples" / "datasets" / "titanic_output";
+  const std::filesystem::path dataDir = ensureParsedPtsdDataset();
 
   mb.loadDataDir(dataDir.string());
   ASSERT_GT(mb.rowCount(), 0u);
@@ -108,8 +124,7 @@ TEST(ModelBuilder, BuildTree_ChildTotalsMatchParentBranchCount) {
 TEST(ModelBuilder, TreeSerialization_RoundTrip) {
   modelbuilder::ModelBuilder mb;
 
-  const std::filesystem::path dataDir = std::filesystem::path{MODELBUILDER_SOURCE_DIR} / "build" / "_deps" /
-                                        "contingencytable-src" / "examples" / "datasets" / "titanic_output";
+  const std::filesystem::path dataDir = ensureParsedPtsdDataset();
 
   mb.loadDataDir(dataDir.string());
   mb.setTargetColumn(1);
@@ -171,8 +186,7 @@ TEST(ModelBuilder, TreeSerialization_RoundTrip) {
 
 TEST(TreeBuilder, ArtifactSerialization_RoundTrip) {
   // Use deterministic built-in dataset from a dependency.
-  const std::filesystem::path dataDir = std::filesystem::path{MODELBUILDER_SOURCE_DIR} / "build" / "_deps" /
-                                        "contingencytable-src" / "examples" / "datasets" / "titanic_output";
+  const std::filesystem::path dataDir = ensureParsedPtsdDataset();
 
   const std::size_t targetColumn = 1;
   const std::size_t maxDepth = 2;
@@ -242,5 +256,89 @@ TEST(TreeBuilder, ArtifactSerialization_RoundTrip) {
     EXPECT_EQ(l0->splitColumnIndexOrMinusOne(), l1->splitColumnIndexOrMinusOne());
     EXPECT_EQ(l0->targetCounts(), l1->targetCounts());
   }
+}
+
+TEST(MultiModelBuilder, Predict_NormalizesLeafCounts) {
+  const std::filesystem::path dataDir = ensureParsedPtsdDataset();
+  const std::filesystem::path outDir = std::filesystem::path{MODELBUILDER_SOURCE_DIR} / "build" / "tests" /
+                                       "predict_model";
+
+  // Create a small multi-model with one target.
+  auto mb = modelbuilder::MultiModelBuilder::buildAndWrite(dataDir.string(),
+                                                           outDir.string(),
+                                                           /*targetColumns=*/{1},
+                                                           /*maxDepth=*/2,
+                                                           /*columnAlpha=*/0.05,
+                                                           /*columnAlphaApplyBonferroni=*/true,
+                                                           /*partitionAlpha=*/0.05,
+                                                           /*partitionAlphaApplyBonferroni=*/false,
+                                                           /*analysisColumns=*/{2},
+                                                           /*threadCount=*/1);
+  mb.loadMap();
+
+  // Use all-missing sample so we can traverse conditionally regardless of split columns.
+  const std::vector<std::uint64_t> sample(/*cols=*/16, 0);
+  const auto dist = mb.predict(sample, /*targetColumn=*/1, /*applyConditional=*/true);
+  ASSERT_FALSE(dist.empty());
+  double sum = 0.0;
+  for (const auto& kv : dist) {
+    EXPECT_GE(kv.second, 0.0);
+    sum += kv.second;
+  }
+  EXPECT_NEAR(sum, 1.0, 1e-12);
+}
+
+TEST(MultiModelBuilder, Predict_MissingValueRequiresConditional) {
+  const std::filesystem::path dataDir = ensureParsedPtsdDataset();
+  const std::filesystem::path outDir = std::filesystem::path{MODELBUILDER_SOURCE_DIR} / "build" / "tests" /
+                                       "predict_model_2";
+
+  auto mb = modelbuilder::MultiModelBuilder::buildAndWrite(dataDir.string(),
+                                                           outDir.string(),
+                                                           /*targetColumns=*/{1},
+                                                           /*maxDepth=*/2,
+                                                           /*columnAlpha=*/0.05,
+                                                           /*columnAlphaApplyBonferroni=*/true,
+                                                           /*partitionAlpha=*/0.05,
+                                                           /*partitionAlphaApplyBonferroni=*/false,
+                                                           /*analysisColumns=*/{2},
+                                                           /*threadCount=*/1);
+  mb.loadMap();
+
+  const std::vector<std::uint64_t> sample(/*cols=*/16, 0);
+  EXPECT_THROW((void)mb.predict(sample, /*targetColumn=*/1, /*applyConditional=*/false), std::exception);
+}
+
+TEST(MultiModelBuilder, Predict_UnknownValueThrows) {
+  const std::filesystem::path dataDir = ensureParsedPtsdDataset();
+  const std::filesystem::path outDir = std::filesystem::path{MODELBUILDER_SOURCE_DIR} / "build" / "tests" /
+                                       "predict_model_3";
+
+  auto mb = modelbuilder::MultiModelBuilder::buildAndWrite(dataDir.string(),
+                                                           outDir.string(),
+                                                           /*targetColumns=*/{1},
+                                                           /*maxDepth=*/2,
+                                                           /*columnAlpha=*/0.05,
+                                                           /*columnAlphaApplyBonferroni=*/true,
+                                                           /*partitionAlpha=*/0.05,
+                                                           /*partitionAlphaApplyBonferroni=*/false,
+                                                           /*analysisColumns=*/{2},
+                                                           /*threadCount=*/1);
+  mb.loadMap();
+
+  // Construct a sample that sets split columns to a value very likely not in any partition.
+  // We discover the root split column from the tree payload.
+  auto art = mb.getTree(1);
+  auto rootOpt = art.tree().getElementData(0);
+  ASSERT_TRUE(rootOpt.has_value());
+  ASSERT_TRUE(std::holds_alternative<modelbuilder::TreeBuilder::Tree::NodeDataResult>(*rootOpt));
+  const auto& [t, ndOpt] = std::get<modelbuilder::TreeBuilder::Tree::NodeDataResult>(*rootOpt);
+  (void)t;
+  ASSERT_TRUE(ndOpt.has_value());
+  const auto split = static_cast<std::size_t>(ndOpt->splitColumnIndex());
+
+  std::vector<std::uint64_t> sample(/*cols=*/16, 0);
+  sample[split] = 9999999; // unknown
+  EXPECT_THROW((void)mb.predict(sample, /*targetColumn=*/1, /*applyConditional=*/true), std::exception);
 }
 

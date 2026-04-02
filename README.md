@@ -30,7 +30,10 @@ ctest --test-dir build --output-on-failure
 ```
 
 ## Run example
-This repo builds an example executable named `modelbuilder_example`.
+This repo builds two example executables:
+- `TreeBuilder_example`: builds a single tree (a `TreeBuilder` artifact) and writes a Graphviz `.dot`.
+- `ModelBuilder_example`: builds many trees (one per target column) into `mb_trees.bin` + `mb_map.bin`,
+  then demonstrates `getTree(targetColumn)` lazy loading.
 
 ### Build (if you haven't already)
 ```sh
@@ -41,7 +44,8 @@ cmake --build build -j
 ### Run
 For single-config generators (Makefiles/Ninja), the binary is typically here:
 ```sh
-./build/examples/modelbuilder_example
+./build/examples/TreeBuilder_example
+./build/examples/ModelBuilder_example
 ```
 
 For multi-config generators (e.g. Xcode/Visual Studio), it is typically under a config subdir:

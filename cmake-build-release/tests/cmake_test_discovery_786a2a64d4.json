@@ -1,20 +1,57 @@
 {
-  "tests": 2,
+  "tests": 7,
   "name": "AllTests",
   "testsuites": [
     {
       "name": "ModelBuilder",
-      "tests": 2,
+      "tests": 3,
       "testsuite": [
         {
           "name": "BuildTree_Smoke",
           "file": "\/Volumes\/DockDrive\/research\/model_builder\/ModelBuilder\/tests\/test_modelbuilder.cpp",
-          "line": 31
+          "line": 29
         },
         {
-          "name": "PartitionCounts_ReconcileWithChildren",
+          "name": "BuildTree_ChildTotalsMatchParentBranchCount",
           "file": "\/Volumes\/DockDrive\/research\/model_builder\/ModelBuilder\/tests\/test_modelbuilder.cpp",
-          "line": 67
+          "line": 70
+        },
+        {
+          "name": "TreeSerialization_RoundTrip",
+          "file": "\/Volumes\/DockDrive\/research\/model_builder\/ModelBuilder\/tests\/test_modelbuilder.cpp",
+          "line": 124
+        }
+      ]
+    },
+    {
+      "name": "TreeBuilder",
+      "tests": 1,
+      "testsuite": [
+        {
+          "name": "ArtifactSerialization_RoundTrip",
+          "file": "\/Volumes\/DockDrive\/research\/model_builder\/ModelBuilder\/tests\/test_modelbuilder.cpp",
+          "line": 187
+        }
+      ]
+    },
+    {
+      "name": "MultiModelBuilder",
+      "tests": 3,
+      "testsuite": [
+        {
+          "name": "Predict_NormalizesLeafCounts",
+          "file": "\/Volumes\/DockDrive\/research\/model_builder\/ModelBuilder\/tests\/test_modelbuilder.cpp",
+          "line": 261
+        },
+        {
+          "name": "Predict_MissingValueRequiresConditional",
+          "file": "\/Volumes\/DockDrive\/research\/model_builder\/ModelBuilder\/tests\/test_modelbuilder.cpp",
+          "line": 291
+        },
+        {
+          "name": "Predict_UnknownValueThrows",
+          "file": "\/Volumes\/DockDrive\/research\/model_builder\/ModelBuilder\/tests\/test_modelbuilder.cpp",
+          "line": 312
         }
       ]
     }
